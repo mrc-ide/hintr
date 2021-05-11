@@ -1289,7 +1289,19 @@ test_that("endpoint_model_calibrate can be run synchronously", {
 })
 
 test_that("can get calibrate plot data", {
-  endpoint <- endpoint_model_calibrate_plot(NULL)
+  test_mock_model_available()
+
+  ## Mock model run
+  queue <- test_queue(workers = 0)
+  unlockBinding("result", queue)
+  ## Clone model output as it modifies in place
+  out <- clone_model_output(mock_model)
+  queue$result <- mockery::mock(out, cycle = TRUE)
+  unlockBinding("queue", queue)
+  unlockBinding("task_status", queue$queue)
+  queue$queue$task_status <- mockery::mock("COMPLETE", cycle = TRUE)
+
+  endpoint <- endpoint_model_calibrate_plot(queue)
   response <- endpoint$run("123")
 
   expect_equal(response$status_code, 200)
@@ -1306,7 +1318,8 @@ test_that("can get calibrate plot data", {
   expect_setequal(names(response_data$plottingMetadata$barchart$indicators),
                   c("indicator", "value_column", "error_low_column",
                     "error_high_column", "indicator_column", "indicator_value",
-                    "name", "scale", "accuracy", "format"))
+                    "indicator_sort_order", "name", "scale", "accuracy",
+                    "format"))
   expect_true(nrow(response_data$plottingMetadata$barchart$indicators) > 0)
 
   filters <- lapply(response_data$plottingMetadata$barchart$filters, "[[",
@@ -1322,9 +1335,19 @@ test_that("can get calibrate plot data", {
 })
 
 test_that("API can return calibration plotting data", {
+  test_mock_model_available()
   test_redis_available()
 
+  ## Mock model run
   queue <- test_queue(workers = 0)
+  unlockBinding("result", queue)
+  ## Clone model output as it modifies in place
+  out <- clone_model_output(mock_model)
+  queue$result <- mockery::mock(out, cycle = TRUE)
+  unlockBinding("queue", queue)
+  unlockBinding("task_status", queue$queue)
+  queue$queue$task_status <- mockery::mock("COMPLETE", cycle = TRUE)
+
   api <- api_build(queue)
   res <- api$request("GET", "/calibrate/plot/12345")
   expect_equal(res$status, 200)
@@ -1348,7 +1371,8 @@ test_that("API can return calibration plotting data", {
   expect_setequal(colnames(barchart_indicators),
                   c("indicator", "value_column", "error_low_column",
                     "error_high_column", "indicator_column", "indicator_value",
-                    "name", "scale", "accuracy", "format"))
+                    "indicator_sort_order", "name", "scale", "accuracy",
+                    "format"))
   expect_true(nrow(barchart_indicators) > 0)
 
   filters <- lapply(response_data$plottingMetadata$barchart$filters, "[[",

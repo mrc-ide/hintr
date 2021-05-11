@@ -253,8 +253,22 @@ test_that("model calibration returns error if queueing fails", {
 })
 
 test_that("can get data for calibration plot", {
-  endpoint <- calibrate_plot(NULL)
-  res <- endpoint("123")
+  test_mock_model_available()
+
+  ## Mock calibrate result
+  queue <- test_queue(workers = 0)
+  unlockBinding("result", queue)
+  ## Clone model output as it modifies in place
+  out <- clone_model_output(mock_model)
+  queue$result <- mockery::mock(out, cycle = TRUE)
+  mock_verify_result_available <- mockery::mock(TRUE)
+
+  ## Calibrate the result
+  with_mock("hintr:::verify_result_available" = mock_verify_result_available, {
+    endpoint <- calibrate_plot(queue)
+    res <- endpoint("123")
+  })
+
   expect_setequal(names(res), c("data", "plottingMetadata"))
   expect_setequal(names(res$data),
                   c("data_type", "area_id", "sex", "age_group",
@@ -267,7 +281,8 @@ test_that("can get data for calibration plot", {
   expect_setequal(names(res$plottingMetadata$barchart$indicators),
                   c("indicator", "value_column", "error_low_column",
                     "error_high_column", "indicator_column", "indicator_value",
-                    "name", "scale", "accuracy", "format"))
+                    "indicator_sort_order", "name", "scale", "accuracy",
+                    "format"))
   expect_true(nrow(res$plottingMetadata$barchart$indicators) > 0)
 
   filters <- lapply(res$plottingMetadata$barchart$filters, function(filter) {
