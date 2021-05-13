@@ -1287,3 +1287,102 @@ test_that("endpoint_model_calibrate can be run synchronously", {
   expect_equal(names(response$data$plottingMetadata),
                c("barchart", "choropleth"))
 })
+
+test_that("can get calibrate plot data", {
+  test_mock_model_available()
+
+  ## Mock model run
+  queue <- test_queue(workers = 0)
+  unlockBinding("result", queue)
+  ## Clone model output as it modifies in place
+  out <- clone_model_output(mock_model)
+  queue$result <- mockery::mock(out, cycle = TRUE)
+  unlockBinding("queue", queue)
+  unlockBinding("task_status", queue$queue)
+  queue$queue$task_status <- mockery::mock("COMPLETE", cycle = TRUE)
+
+  endpoint <- endpoint_model_calibrate_plot(queue)
+  response <- endpoint$run("123")
+
+  expect_equal(response$status_code, 200)
+  response_data <- response$data
+  expect_setequal(names(response_data), c("data", "plottingMetadata"))
+  expect_setequal(names(response_data$data),
+                  c("data_type", "area_id", "sex", "age_group",
+                    "calendar_quarter", "indicator", "mean", "lower", "upper"))
+  expect_true(nrow(response_data$data) > 0)
+  expect_equal(names(response_data$plottingMetadata), "barchart")
+  expect_setequal(names(response_data$plottingMetadata$barchart),
+                  c("indicators", "filters", "defaults"))
+
+  expect_setequal(names(response_data$plottingMetadata$barchart$indicators),
+                  c("indicator", "value_column", "error_low_column",
+                    "error_high_column", "indicator_column", "indicator_value",
+                    "indicator_sort_order", "name", "scale", "accuracy",
+                    "format"))
+  expect_true(nrow(response_data$plottingMetadata$barchart$indicators) > 0)
+
+  filters <- lapply(response_data$plottingMetadata$barchart$filters, "[[",
+                    "column_id")
+  expect_equal(filters[[1]], scalar("area_id"))
+  expect_equal(filters[[2]], scalar("calendar_quarter"))
+  expect_equal(filters[[3]], scalar("sex"))
+  expect_equal(filters[[4]], scalar("age_group"))
+
+  expect_setequal(names(response_data$plottingMetadata$barchart$defaults),
+                  c("indicator_id", "x_axis_id", "disaggregate_by_id",
+                    "selected_filter_options"))
+})
+
+test_that("API can return calibration plotting data", {
+  test_mock_model_available()
+  test_redis_available()
+
+  ## Mock model run
+  queue <- test_queue(workers = 0)
+  unlockBinding("result", queue)
+  ## Clone model output as it modifies in place
+  out <- clone_model_output(mock_model)
+  queue$result <- mockery::mock(out, cycle = TRUE)
+  unlockBinding("queue", queue)
+  unlockBinding("task_status", queue$queue)
+  queue$queue$task_status <- mockery::mock("COMPLETE", cycle = TRUE)
+
+  api <- api_build(queue)
+  res <- api$request("GET", "/calibrate/plot/12345")
+  expect_equal(res$status, 200)
+  body <- jsonlite::fromJSON(res$body, simplifyDataFrame = FALSE)
+  expect_equal(body$status, "success")
+  expect_null(body$errors)
+
+  response_data <- body$data
+  expect_setequal(names(response_data), c("data", "plottingMetadata"))
+  data <- do.call(rbind, response_data$data)
+  expect_setequal(colnames(data),
+                  c("data_type", "area_id", "sex", "age_group",
+                    "calendar_quarter", "indicator", "mean", "lower", "upper"))
+  expect_true(nrow(data) > 0)
+  expect_equal(names(response_data$plottingMetadata), "barchart")
+  expect_setequal(names(response_data$plottingMetadata$barchart),
+                  c("indicators", "filters", "defaults"))
+
+  barchart_indicators <- do.call(
+    rbind, response_data$plottingMetadata$barchart$indicators)
+  expect_setequal(colnames(barchart_indicators),
+                  c("indicator", "value_column", "error_low_column",
+                    "error_high_column", "indicator_column", "indicator_value",
+                    "indicator_sort_order", "name", "scale", "accuracy",
+                    "format"))
+  expect_true(nrow(barchart_indicators) > 0)
+
+  filters <- lapply(response_data$plottingMetadata$barchart$filters, "[[",
+                    "column_id")
+  expect_equal(filters[[1]], "area_id")
+  expect_equal(filters[[2]], "calendar_quarter")
+  expect_equal(filters[[3]], "sex")
+  expect_equal(filters[[4]], "age_group")
+
+  expect_setequal(names(response_data$plottingMetadata$barchart$defaults),
+                  c("indicator_id", "x_axis_id", "disaggregate_by_id",
+                    "selected_filter_options"))
+})

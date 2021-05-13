@@ -40,7 +40,7 @@ mock_model_v0.1.4 <- list(
                 package = "hintr"),
   calibration_path = system.file("output", "malawi_calibration.rds",
                                  package = "hintr"))
-class(mock_model) <- "hintr_output"
+class(mock_model_v0.1.4) <- "hintr_output"
 
 ## Model output as returned by
 ## hintr version 0.1.2 and naomi version 1.0.4

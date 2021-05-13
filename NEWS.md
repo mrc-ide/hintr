@@ -1,3 +1,7 @@
+# hintr 0.1.34
+
+* Add endpoint to return data and metadata for plotting calibrate barchart
+
 # hintr 0.1.33
 
 * Return upload metadata from calibrate result response

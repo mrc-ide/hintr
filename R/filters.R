@@ -148,6 +148,21 @@ get_barchart_defaults <- function(output, output_filters) {
   )
 }
 
+get_calibrate_barchart_defaults <- function(filters) {
+  list(
+    indicator_id = scalar("population"),
+    x_axis_id = scalar("area_id"),
+    disaggregate_by_id = scalar("data_type"),
+    selected_filter_options = list(
+      quarter = get_selected_filter_options(filters, "quarter")[2],
+      sex = get_selected_filter_options(filters, "sex",
+                                        c("female", "male")),
+      age = get_selected_filter_options(
+        filters, "age", naomi::get_five_year_age_groups())
+    )
+  )
+}
+
 #' Get selected filter options from full list of output filters.
 #'
 #' Gets the filter options of a particular type matching a set of IDs.

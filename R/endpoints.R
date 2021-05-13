@@ -182,6 +182,24 @@ calibrate_result <- function(queue) {
   }
 }
 
+calibrate_plot <- function(queue) {
+  function(id) {
+    verify_result_available(queue, id)
+    data <- naomi::hintr_calibrate_plot(queue$result(id))
+    filters <- get_model_output_filters(data)
+    list(
+      data = data,
+      plottingMetadata = list(
+        barchart = list(
+          indicators = get_barchart_metadata(data, "calibrate"),
+          filters = filters,
+          defaults = get_calibrate_barchart_defaults(filters)
+        )
+      )
+    )
+  }
+}
+
 verify_result_available <- function(queue, id) {
   task_status <- queue$queue$task_status(id)
   if (task_status == "COMPLETE") {
