@@ -1,3 +1,7 @@
+# hintr 1.0.0
+
+* Update downloads to be generated on demand instead of as part of model calibration
+
 # hintr 0.1.37
 
 * Add dummy endpoint `/calibrate/plot/<id>` to return dummy data for upcoming calibrate plot
