@@ -62,6 +62,18 @@ get_area_level_filters <- function(data) {
   })
 }
 
+get_output_indicator_filters <- function() {
+  metadata <- naomi::get_metadata()
+  indicator_metadata <- metadata[
+    metadata$data_type == "output" & metadata$plot_type == "barchart",
+    c("indicator", "name")]
+  names(indicator_metadata) <- c("id", "label")
+  ordering <- metadata[
+    metadata$data_type == "output" & metadata$plot_type == "barchart",
+    c("indicator_sort_order")]
+  indicator_metadata[order(ordering), ]
+}
+
 #' Read filters from wide format data
 #'
 #' Expect input data with headers like
@@ -117,27 +129,33 @@ get_model_output_filters <- function(data) {
     list(
       id = scalar("area"),
       column_id = scalar("area_id"),
-      label = scalar(t_("OUTPUT_FILTER_AREA")),
       options = json_verbatim("null"),
       use_shape_regions = scalar(TRUE)
     ),
     list(
-      id = scalar("quarter"),
+      id = scalar("detail"),
+      column_id = scalar("area_level"),
+      options = get_area_level_filters(data)
+    ),
+    list(
+      id = scalar("period"),
       column_id = scalar("calendar_quarter"),
-      label = scalar(t_("OUTPUT_FILTER_PERIOD")),
       options = get_quarter_filters(data)
     ),
     list(
       id = scalar("sex"),
       column_id = scalar("sex"),
-      label = scalar(t_("OUTPUT_FILTER_SEX")),
       options = get_sex_filters(data)
     ),
     list(
       id = scalar("age"),
       column_id = scalar("age_group"),
-      label = scalar(t_("OUTPUT_FILTER_AGE")),
       options = get_age_filters(data)
+    ),
+    list(
+      id = scalar("indicator"),
+      column_id = scalar("indicator"),
+      options = get_output_indicator_filters()
     )
   )
 }
@@ -213,15 +231,6 @@ get_comparison_plot_filters <- function(data) {
   )
 }
 
-get_area_level_filter <- function(data) {
-  list(
-    id = scalar("area_level"),
-    column_id = scalar("area_level"),
-    label = scalar(t_("OUTPUT_FILTER_DETAIL_LEVEL")),
-    options = get_area_level_filters(data)
-  )
-}
-
 get_barchart_defaults <- function(output, output_filters) {
   list(
     indicator_id = scalar("prevalence"),
@@ -229,7 +238,7 @@ get_barchart_defaults <- function(output, output_filters) {
     disaggregate_by_id = scalar("sex"),
     selected_filter_options = list(
       area = get_area_id_filter_default(output),
-      quarter = get_selected_mappings(output_filters, "quarter")[2],
+      period = get_selected_mappings(output_filters, "period")[2],
       sex = get_selected_mappings(output_filters, "sex", c("female", "male")),
       age = get_selected_mappings(output_filters, "age",
                                   naomi::get_five_year_age_groups())
