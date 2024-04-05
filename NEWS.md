@@ -1,3 +1,7 @@
+# hintr 1.1.24
+
+* Add new endpoint `/download/result/path/<id>` to return path to the download file on disk
+
 # hintr 1.1.23
 
 * Return calibrate result path from `/calibrate/result/path/<id>` relative to the results directory
