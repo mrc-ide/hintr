@@ -981,7 +981,7 @@ test_that("api can call endpoint_model_calibrate", {
                                         status_body$data$id))
   expect_equal(path_res$status, 200)
   path_body <- jsonlite::fromJSON(path_res$body)
-  expect_true(file.exists(path_body$data$path))
+  expect_true(file.exists(file.path(q$queue$results_dir, path_body$data$path)))
 })
 
 test_that("model calibrate result includes warnings", {
