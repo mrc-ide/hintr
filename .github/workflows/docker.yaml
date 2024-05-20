@@ -2,9 +2,9 @@ name: Build Docker Image
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, tmp-epic-plot-cleanup-input, comparison-metadata]
   pull_request:
-    branches: [main, master]
+    branches: [main, master, tmp-epic-plot-cleanup-input, comparison-metadata]
 
 env:
   TAG_SERVER_DH: mrcide/hintr
@@ -30,6 +30,9 @@ jobs:
             echo "CI_SHA=${GITHUB_SHA}" >> $GITHUB_OUTPUT
             echo "CI_BRANCH=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           fi
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
